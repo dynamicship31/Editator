@@ -9,3 +9,8 @@ After that you need to install readkey with:
   pip install readchar
 
 Then boot up the editor by running it with python.
+
+
+## Editator is still a WIP!
+Editator is still in an alpha state and can be unstable at times.
+This isn't the full release.
