@@ -1,0 +1,362 @@
+import terminalUtils as ut
+import os
+from readchar import readkey, key
+import sys
+
+
+
+file = ["Welcome to EDITATOR (Alpha)","","Editator is somewhat unstable so don't rely on it too much!","","Shortcuts:",
+" - Ctrl+b         = Command mode.",
+" - Ctrl+e         = Goes to the end of the line, goes to the start if already at the end.",
+" - Ctrl+Backspace = Deletes the content of the current line.",
+" - Ctrl+\\        = ",
+"",
+"Command mode keys:",
+" - w         = Writes to the file.",
+" - r         = Renames the file.",
+" - g         = Goto a line.",
+" - h         = Toggles on/off the highlight.",
+" - c         = Clears the whole file.",
+" - u         = Undoes the last action.",
+" - o         = Opens a file.",
+" - q         = Force quits.",
+" - i         = Toggles on/off the auto indentation.",
+" - backspace = Delete from line to line",
+"",
+"(NOT ALL THE KEYBINDS ARE PRESENT HERE)"
+]
+undo_max_size = 100
+file_backups = [[""] for i in range(undo_max_size)]
+file_name = "untitled.txt"
+
+if 1 < len(sys.argv) < 3: # Arguement handling.
+    try:
+        with open(sys.argv[1]) as f:
+            file = f.read().split("\n")
+        file_name = sys.argv[1]
+    except:
+        print("Error: Could not open the file provided.")
+        exit(0)
+elif len(sys.argv) != 1:
+    print("Usage: python3 main.py <file path>")
+
+# General variables
+
+undo_count = 0
+
+cursor_pos = [1,1]
+scroll = 0
+
+color = "\033[48;2;31;31;31m"
+cursor_line_bg_color = "\x1b[48;2;65;65;65m"
+line_bg_color = "\x1b[48;2;34;34;34m"
+
+highlight = False
+
+toggle_command_after = False
+
+auto_indent = True
+
+# File showing stuff
+
+def saveBackup():
+    global undo_count
+    file_backups[undo_count % undo_max_size] = file[:]
+    undo_count += 1
+
+def update_scroll():
+    global scroll
+    old_scroll = scroll
+    if cursor_pos[0] > scroll + term_size.lines - 2:
+        scroll = cursor_pos[0] - (term_size.lines - 2)
+    if cursor_pos[0] <= scroll:
+        scroll = cursor_pos[0] - 1
+    if scroll != old_scroll:
+        print("\033[2J", end="")
+
+import re
+
+def ansi_len(s: str) -> int:
+    """Return visible length of string, ignoring ANSI escape codes."""
+    return len(re.sub(r'\033\[[0-9;]*m|\x1b\[[0-9;]*[a-zA-Z]', '', s))
+
+def showfile():
+    counter = 1 + scroll
+    screen_row = 1
+    space = " "
+
+    for i in file[scroll:scroll + term_size.lines - 2]:
+        if highlight == True:
+            import highlight as hl
+            i = hl.colorUp(i,color,file_name.split(".")[-1])
+
+        tmp1 = f"{cursor_line_bg_color}{space*(5-len(str(counter)))}\033[1;33m{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if i.strip()=="" else i)
+        tmp2 = f"{line_bg_color}{space*(5-len(str(counter)))}{counter} \033[0;0m{color} " + i
+
+        pad = term_size.columns - ansi_len(tmp1 if counter == cursor_pos[0] else tmp2)
+        pad = max(0, pad)  # Never negative
+
+        if counter == cursor_pos[0]:
+            ut.printAt(screen_row, 0, tmp1 + color + " " * pad + "\033[0;0m")
+        else:
+            ut.printAt(screen_row, 0, tmp2 + color + " " * pad + "\033[0;0m")
+
+        counter += 1
+        screen_row += 1
+
+    for row in range(screen_row, term_size.lines - 1):
+        ut.printAt(row, 0, color + " " * term_size.columns + "\033[0;0m")
+
+print("\033[2J",end="")
+
+ut.cursorVisible(False)
+
+show_pos = [1,1]
+
+sticky_column = 1
+
+command = False
+
+def clearCursor():
+    ut.printAt(cursor_pos[0]+1,cursor_pos[1]+7," ")
+k = " "
+
+plugins_shortcuts = {}
+
+import plugins as plg
+plg.init(globals())
+
+
+while True: # Main loop
+    term_size = os.get_terminal_size()
+
+    update_scroll()
+
+    show_pos=[cursor_pos[0] - scroll,cursor_pos[1]%(term_size.columns-7)]
+
+    showfile()
+
+    # Bottom bars
+    ut.printAt(term_size.lines-1,0,"\x1b[48;2;24;24;24m\x1b[38;2;255;255;255m  Editator"+" "*(term_size.columns-len("  Editator"))+"\033[0;0m")
+    ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+
+    if command : ut.printAt(term_size.lines-1,40,"\033[1;32m{CMD}\033[0;0m")
+
+
+    ut.printAt(term_size.lines-1,15,cursor_pos)
+    ut.printAt(term_size.lines-1,27,[k])
+
+    ut.printAt(show_pos[0], show_pos[1] + 7, "")  # Move real cursor there
+    ut.cursorVisible(True)
+
+    print("\033[2 q",flush=True,end="")
+
+    k = readkey()
+
+    if k == "\x01":
+        ut.cursorVisible(True)
+        print("\033[2J\033[H\033[0 q",end="")
+        exit()
+
+    elif command == True: # Command mode?
+        cmd_cursor_pos = 0
+        if k in ("\n","\r"):
+            command = False
+        elif k == "w": # Write file
+            while True:
+                ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+                ut.printAt(term_size.lines,0,"")
+                match input("Write?>").lower():
+                    case "y" | "yes":
+                        with open(file_name,"w") as f:
+                            f.write("\n".join(file))
+                        break
+                    case "n":
+                        break
+                    case _:
+                        continue
+        elif k == "o": # Open file
+            ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+            ut.printAt(term_size.lines,0,"")
+            fpath = input("File?>")
+            try:
+                with open(fpath, "r") as f:
+                    file = f.read().split("\n")
+                    file_name = fpath
+                cursor_pos = [1,1]
+            except:
+                ut.printAt(term_size.lines,0,"\033[1;31mError: Could not open file\033[0;0m")
+
+        elif k == "r": # Rename file
+            ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+            ut.printAt(term_size.lines,0,"")
+            file_name = input("Name?>")
+        elif k == "q": # Force quit
+            if input("Force quit?>").lower() in ("y","yes") : exit()
+        elif k == "h": # Highlight on/off
+            highlight = False if highlight == True else True
+        elif k == "u": # Undo
+            if undo_count > 0:
+                undo_count -= 1
+                file = file_backups[undo_count % undo_max_size][:]
+                if cursor_pos[0] > len(file) : cursor_pos[0] = len(file)
+                cursor_pos[1] = len(file[cursor_pos[0]-1])+1
+        elif k == "g": # Goto line
+            ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+            ut.printAt(term_size.lines,0,"")
+            while True:
+                goto_line = input("Line number?>")
+                try:
+                    cursor_pos = [int(goto_line) if 0 < int(goto_line) <= len(file) else cursor_pos[0],1]
+                    sticky_column = 1
+                    break
+                except : continue
+        elif k == "c": # Clear file
+            ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+            ut.printAt(term_size.lines,0,"")
+            if input("Do want to clear the file?(y/anything else)>") == "y" : file = [""];cursor_pos=[1,1]
+        elif k == key.BACKSPACE: # Delete from line to line
+            ut.printAt(term_size.lines,0,"")
+            try:
+                usrinput = input("Lines to delete (format: startLine&endLine)>").split("&")
+                start = int(usrinput[0]) - 1
+                end = int(usrinput[1])
+
+                # Clamp to valid range
+                start = max(0, min(start, len(file) - 1))
+                end = max(start + 1, min(end, len(file)))
+
+                file[start:end] = []
+
+                # Ensure file is never empty
+                if not file:
+                    file = [""]
+
+                # Clamp cursor to valid position
+                cursor_pos[0] = min(cursor_pos[0], len(file))
+                cursor_pos[0] = max(1, cursor_pos[0])
+                cursor_pos[1] = min(cursor_pos[1], len(file[cursor_pos[0] - 1]) + 1)
+                cursor_pos[1] = max(1, cursor_pos[1])
+
+            except:
+                pass
+        elif k == "i": # Auto indent on/off
+            auto_indent = False if auto_indent else True
+        elif k == "R": # Replace (planning on reworking this in the future)
+            ut.printAt(term_size.lines,0,"")
+            x1 = input("Word to replace>")
+            ut.printAt(term_size.lines,0," "*term_size.columns)
+            ut.printAt(term_size.lines,0,"")
+            x2 = input("Word that replaces it>")
+            for index,content in enumerate(file) : file[index] = content.replace(x1,x2)
+        if toggle_command_after == True : command = False
+
+    # Arrows
+    elif k == key.UP:
+        clearCursor()
+        if cursor_pos[0] > 1:
+            cursor_pos[0] -= 1
+            cursor_pos[1] = min(sticky_column, len(file[cursor_pos[0]-1]) + 1)
+    elif k == key.RIGHT:
+        clearCursor()
+        if cursor_pos[1] <= len(file[cursor_pos[0]-1]) : cursor_pos[1]+=1 ; sticky_column = cursor_pos[1]
+    elif k == key.LEFT:
+        clearCursor()
+        if cursor_pos[1] > 1 : cursor_pos[1]-=1 ; sticky_column = cursor_pos[1]
+    elif k == key.DOWN:
+        if cursor_pos[0] + 1 <= len(file):
+            cursor_pos[0] += 1
+            cursor_pos[1] = min(sticky_column, len(file[cursor_pos[0]-1]) + 1)
+
+    # Actual keys
+    elif k in ("\r","\n"): # Enter
+        saveBackup()
+        clearCursor()
+
+        line_before = file[cursor_pos[0]-1]
+
+        file.insert(cursor_pos[0],(" "*(len(line_before)-len(line_before.lstrip(" "))) if auto_indent else "")+file[cursor_pos[0]-1][cursor_pos[1]-1:]) # makes the next line
+        file[cursor_pos[0]-1]=file[cursor_pos[0]-1][:cursor_pos[1]-1] # adds to the nextline the things
+        cursor_pos[1]=(len(line_before)-len(line_before.lstrip(" ")))+1 if auto_indent else 1
+        cursor_pos[0]+=1
+    elif k == "\x02": # Ctrl+w (command mode)
+        command = True
+    elif k == "\x1c": # Ctrl+\ (remove indentation)
+        cursor_pos[1] -= len(file[cursor_pos[0]-1])-len(file[cursor_pos[0]-1].lstrip(" "))
+        file[cursor_pos[0]-1] = file[cursor_pos[0]-1].lstrip(" ")
+    elif k == "\x05": # Ctrl+e (goto end/start of the line)
+        if cursor_pos[1] == len(file[cursor_pos[0]-1])+1 : cursor_pos[1] = 1 ; sticky_column = cursor_pos[1]
+        else : cursor_pos[1] = len(file[cursor_pos[0]-1])+1 ; sticky_column = cursor_pos[1]
+    elif k == "\x10":
+        second_key = readkey()
+        if second_key in plugins_shortcuts:
+            plugins_shortcuts[second_key]()
+    elif k == "\x08": # Ctrl+Delete (clear line)
+        file[cursor_pos[0]-1] = ""
+        cursor_pos[1] = 1
+    elif k == "\x17":
+        usrinput = readkey()
+        line = file[cursor_pos[0]-1]
+        col = cursor_pos[1] - 1  # 0-indexed
+        start = col
+        while start > 0 and line[start-1] not in (' ', '\t'):
+            start -= 1
+        # Search right for end of word
+        end = col
+        while end < len(line) and line[end] not in (' ', '\t'):
+            end += 1
+
+        word = line[start:end]
+
+        match usrinput:
+            case key.BACKSPACE:
+                # Delete the word
+                file[cursor_pos[0]-1] = line[:start] + line[end:]
+                cursor_pos[1] = start + 1  # move cursor to where word was
+                sticky_column = cursor_pos[1]
+            case "c":
+                # Toggle case of the word
+                if word == word.upper():
+                    new_word = word.lower()
+                elif word == word.lower():
+                    new_word = word.upper()
+                else:
+                    # Mixed case → go to upper
+                    new_word = word.upper()
+                file[cursor_pos[0]-1] = line[:start] + new_word + line[end:]
+            case _:
+                0
+    elif k == key.BACKSPACE: # Backspace handling
+        saveBackup()
+        clearCursor()
+        
+        if cursor_pos[1] == 1 and cursor_pos[0] > 1:
+            cursor_pos[1] = len(file[cursor_pos[0]-2])+1
+            file[cursor_pos[0]-2] += file[cursor_pos[0]-1]
+            file.pop(cursor_pos[0]-1)
+            cursor_pos[0] -= 1
+        elif cursor_pos[1] > 1:
+            cursor_pos[1] -= 1
+            tmp = list(file[cursor_pos[0]-1])
+            tmp.pop(cursor_pos[1]-1)
+            file[cursor_pos[0]-1] = "".join(tmp)
+            ut.printAt(cursor_pos[0],0," "*term_size.columns)
+        sticky_column = cursor_pos[1]
+    elif k == "\t": # tabs into spaces
+        clearCursor()
+
+        tmp = list(file[cursor_pos[0]-1])
+        tmp.insert(cursor_pos[1]-1,"    ")
+        file[cursor_pos[0]-1] = "".join(tmp)
+
+        cursor_pos[1]+=4
+    elif k.isprintable() and len(k) == 1: # Normal keys
+        saveBackup()
+        clearCursor()
+
+        tmp = list(file[cursor_pos[0]-1])
+        tmp.insert(cursor_pos[1]-1,k)
+        file[cursor_pos[0]-1] = "".join(tmp)
+
+        cursor_pos[1]+=1
+        sticky_column+=1
