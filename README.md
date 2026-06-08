@@ -6,7 +6,7 @@ Editator is a terminal based editor like vim or nano. It's completely built from
 First you must have python3 and pip installed on your machine.
 After that you need to install readkey with:
 
-  pip install readchar
+    pip install readchar
 
 Then boot up the editor by running it with python.
 
