@@ -1,15 +1,15 @@
 # COLORUP HIGHLIGHTING SYSTEM
-# Colorup is still not complete and doesn't support multiline comment and strings for now.
+# Colorup is still not complete and doesn't support multiline comments and strings for now.
 
 """
 SUPPORTED LANGUAGES
 
 Python, Javascript/Typescript, Haskell, Porth,
-C, Lua, Go
+C, Lua, Go, Fortran
 
 FUTURE LANGUAGES TO SUPPORT
 
-Php, Jai, Rust, Fortran, Ada, Pascal, Hare,
+Php, Jai, Rust, Ada, Pascal, Hare,
 QbeBackend IR, LLVM IR
 """
 
@@ -41,7 +41,7 @@ def goodsplit(dividers: list, content: str):
     return tokens
 
 
-def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special_keywords=[], comment="//"):
+def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special_keywords=[], comment="//", case_sensitivity=True,colors=["","","",""]):
     tokens = goodsplit(list("\"#()[]{}-+*/%&=£$'!^<>|:;,. "), x)
     parts = []
 
@@ -66,29 +66,35 @@ def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special
             in_string = True
             string_char = token
             parts.append(f"\033[38;2;100;170;100m{token}{reset(bg)}")
-        elif token in keywords:
-            if token in super_special_keywords : parts.append(f"\033[38;2;18;180;200m{token}{reset(bg)}")
-            elif token in special_keywords : parts.append(f"\033[1;31m{token}{reset(bg)}")
+        elif (token if case_sensitivity else token.lower()) in keywords:
+            if (token if case_sensitivity else token.lower()) in super_special_keywords : parts.append(f"\033[38;2;18;180;200m{colors[3]}{token}{reset(bg)}")
+            elif (token if case_sensitivity else token.lower()) in special_keywords : parts.append(f"\033[1;31m{colors[2]}{token}{reset(bg)}")
             else:
-                parts.append(f"\033[1;33m{token}{reset(bg)}")
+                parts.append(f"\033[1;33m{colors[1]}{token}{reset(bg)}")
         elif token.isdigit():
             parts.append(f"\033[38;5;81m{token}{reset(bg)}")
-        else:
-            parts.append(token)
+#        elif not token in "\"#()[]{}-+*/%&=£$'!^<>|:;,. ":
+#            parts.append(f"\033[38;2;156;220;254m{token}{reset(bg)}")
+        else : parts.append(colors[0]+token)
 
     return "".join(parts)
 
-def colorUp(x:str, bg=BG,file_type:str = "txt"):
+def colorUp(x:str, bg=BG,file_type:str = "txt", colors:list=["","","",""]):
+    case_sens = True
     match file_type:
         case "py":
             tmp_keywords = [
-            ["len",'print','enumerate','False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'case', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'match', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield']
+            ["len",'print','enumerate','False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'case', 'class', 'continue', 'def', 'del', 'elif',
+            'else', 'except', 'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'match', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
+            'try', 'while', 'with', 'yield','str','int']
             ,["if","for","while","True","False","None","and","in","not","is","elif","else","continue","pass"]
             ,["import","try","except","print","enumerate","len"]]
             commentchar = "#"
         case "c" | "h":
             tmp_keywords = [
-            ["include","auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas","_Alignof","_Atomic","_BitInt","_Bool","_Complex","_Decimal128","_Decimal32","_Decimal64","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"]
+            ["include","auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long",
+            "register","restrict","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while","_Alignas",
+            "_Alignof","_Atomic","_BitInt","_Bool","_Complex","_Decimal128","_Decimal32","_Decimal64","_Generic","_Imaginary","_Noreturn","_Static_assert","_Thread_local"]
             ,["if","for","while","switch","case","extern"]
             ,["include","int","char","void","goto","struct"]]
             commentchar = "//"
@@ -137,7 +143,43 @@ def colorUp(x:str, bg=BG,file_type:str = "txt"):
             ["break","if","in","and","do","else","elseif","end","false","for","goto","then","true","not","or","while","until"],
             ["nil","local"]
             ]
+            commentchar = "--"
+        case "for" | "f90":
+            tmp_keywords = [
+            ["abstract", "allocatable", "allocate", "assignment", "associate","asynchronous", "backspace", "bind", "block", "blockdata",
+            "call", "case", "class", "close", "codimension","common", "complex", "concurrent", "contains", "continue",
+            "critical", "cycle", "data", "deallocate", "default","deferred", "dimension", "do", "doubleprecision", "else",
+            "elseif", "elsewhere", "end", "endassociate", "endblock","endcritical", "endenum", "endfile", "endforall", "endfunction",
+            "endif", "endinterface", "endmodule", "endprocedure", "endprogram","endselect", "endsubmodule", "endsubroutine", "endteam", "endtype",
+            "endwhere", "entry", "enum", "enumerator", "equivalence","errorstop", "event", "exit", "extends", "external",
+            "file", "final", "flush", "forall", "format","function", "generic", "go", "goto", "if",
+            "implicit", "import", "in", "include", "inout","integer", "intent", "interface", "intrinsic", "lock",
+            "logical", "module", "namelist", "none", "non_intrinsic","nopass", "only", "open", "operator", "optional",
+            "out", "parameter", "pass", "pause", "pointer","print", "private", "procedure", "program", "protected",
+            "public", "pure", "read", "real", "recursive","result", "return", "rewind", "save", "select",
+            "sequence", "stop", "submodule", "subroutine", "sync","target", "team", "then", "type", "unlock",
+            "use", "value", "volatile", "wait", "where","while", "write"],
+            ["open","goto","read","pass","include","exit","call","continue"],
+            ["implicit","integer","logical","character","print","write","doubleprecision","file"]
+            ]
+            commentchar = "!"
+            case_sens = False
+        case "sh" | "bash":
+            tmp_keywords = [
+            ["if", "then", "else", "elif", "fi", "case", "esac", "for", "select", "while",
+            "until", "do", "done", "in", "function", "time",
+            "coproc", "string", "integer", "array", "associative_array", "function", "readonly", "exported", "local",
+            "nameref", "alias", "bg", "bind", "break", "builtin", "caller", "cd", "command", "compgen",
+            "complete", "compopt", "continue", "declare", "dirs", "disown", "echo", "enable", "eval", "exec",
+            "exit", "export", "fc", "fg", "getopts", "hash", "help", "history", "jobs", "kill",
+            "let", "local", "logout", "mapfile", "popd", "printf", "pushd", "pwd", "read", "readarray",
+            "readonly", "return", "set", "shift", "shopt", "source", ".", "suspend", "test", "[",
+            "times", "trap", "type", "typeset", "ulimit", "umask", "unalias", "unset", "wait"],
+            ["until","if","fi","then","for","while","do","in","done"],
+            ["alias","jobs","kill","umask","unalias","unset","wait","exit","complete"]
+            ]
+            commentchar = "#"
         case _:
-            return x
+            return colors[0]+x
 
-    return generalColorUp(x,bg,tmp_keywords[0],tmp_keywords[1],tmp_keywords[2],commentchar)
+    return generalColorUp(x,bg,tmp_keywords[0],tmp_keywords[1],tmp_keywords[2],commentchar,case_sens,colors)

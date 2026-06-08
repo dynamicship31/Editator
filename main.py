@@ -47,15 +47,44 @@ undo_count = 0
 cursor_pos = [1,1]
 scroll = 0
 
+# (colors)
 color = "\033[48;2;31;31;31m"
-cursor_line_bg_color = "\x1b[48;2;65;65;65m"
-line_bg_color = "\x1b[48;2;34;34;34m"
+cursor_line_count_bg_color = "\x1b[48;2;65;65;65m"
+line_count_bg_color = "\x1b[48;2;34;34;34m"
+cursor_line_count_fg = "\x1b[1;33m"
+line_count_fg = ""
+top_bar_color = ""
+bottom_bar_color = ""
 
-highlight = False
+# (highlight colors)
+default_color        = ""
+keyword_color        = ""
+special_color        = ""
+super_special_color  = ""
 
-toggle_command_after = False
+highlight = True # Turn to false to not have highlighting on by default
+
+toggle_command_after = True # Turn to false if you are a masochist
 
 auto_indent = True
+
+# IO commands
+def outputDialogue(msg:str):
+    ut.printAt(term_size.lines,0,"\033[38;2;54;54;54m"+" "*term_size.columns)
+    ut.printAt(term_size.lines,0,msg)
+
+def inputDialogue(prompt:str) -> str:
+    final_output = ""
+    ut.printAt(term_size.lines,0,prompt)
+    while True:
+        thekey = readkey()
+        if thekey in ("\n","\r") : break
+        elif thekey == key.BACKSPACE:
+            final_output+=thekey
+        elif thekey.isprintable() and len(thekey) == 1:
+            final_output+=thekey
+        ut.printAt(term_size.lines,len(prompt),final_output+"\033[38;2;54;54;54m"+" "*(term_size.columns-len(prompt)-len(final_output)))
+    return final_output
 
 # File showing stuff
 
@@ -88,10 +117,10 @@ def showfile():
     for i in file[scroll:scroll + term_size.lines - 2]:
         if highlight == True:
             import highlight as hl
-            i = hl.colorUp(i,color,file_name.split(".")[-1])
+            i = hl.colorUp(i,color,file_name.split(".")[-1],[default_color,keyword_color,special_color,super_special_color])
 
-        tmp1 = f"{cursor_line_bg_color}{space*(5-len(str(counter)))}\033[1;33m{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if i.strip()=="" else i)
-        tmp2 = f"{line_bg_color}{space*(5-len(str(counter)))}{counter} \033[0;0m{color} " + i
+        tmp1 = f"{cursor_line_count_bg_color}{space*(5-len(str(counter)))}{cursor_line_count_fg}{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if i.strip()=="" else i)
+        tmp2 = f"{line_count_bg_color}{space*(5-len(str(counter)))}{line_count_fg}{counter} \033[0;0m{color} " + i
 
         pad = term_size.columns - ansi_len(tmp1 if counter == cursor_pos[0] else tmp2)
         pad = max(0, pad)  # Never negative
@@ -137,8 +166,8 @@ while True: # Main loop
     showfile()
 
     # Bottom bars
-    ut.printAt(term_size.lines-1,0,"\x1b[48;2;24;24;24m\x1b[38;2;255;255;255m  Editator"+" "*(term_size.columns-len("  Editator"))+"\033[0;0m")
-    ut.printAt(term_size.lines,0,"\x1b[48;2;54;54;54m"+" "*term_size.columns+"\033[0;0m")
+    ut.printAt(term_size.lines-1,0,f"\x1b[48;2;24;24;24m\x1b[38;2;255;255;255m{top_bar_color}  Editator"+" "*(term_size.columns-len("  Editator"))+"\033[0;0m")
+    ut.printAt(term_size.lines,0,f"\x1b[48;2;54;54;54m{bottom_bar_color}"+" "*term_size.columns+"\033[0;0m")
 
     if command : ut.printAt(term_size.lines-1,40,"\033[1;32m{CMD}\033[0;0m")
 
@@ -249,6 +278,19 @@ while True: # Main loop
             ut.printAt(term_size.lines,0,"")
             x2 = input("Word that replaces it>")
             for index,content in enumerate(file) : file[index] = content.replace(x1,x2)
+        elif k == "d":
+            file.insert(cursor_pos[0],"")
+            file[cursor_pos[0]] = file[cursor_pos[0]-1]
+            cursor_pos[0]+=1
+        elif k == "\t":
+            cursor_pos[1] += 4
+            file[cursor_pos[0]-1] = "    "+file[cursor_pos[0]-1]
+        elif k == "-":
+            toggle_command_after = False if toggle_command_after else True
+        elif k == ":":
+            match inputDialogue(":"):
+                case "opt":
+                    outputDialogue("Optimized!!!")
         if toggle_command_after == True : command = False
 
     # Arrows
@@ -282,7 +324,7 @@ while True: # Main loop
     elif k == "\x02": # Ctrl+w (command mode)
         command = True
     elif k == "\x1c": # Ctrl+\ (remove indentation)
-        cursor_pos[1] -= len(file[cursor_pos[0]-1])-len(file[cursor_pos[0]-1].lstrip(" "))
+        cursor_pos[1] -= max(1,len(file[cursor_pos[0]-1])-len(file[cursor_pos[0]-1].lstrip(" ")))
         file[cursor_pos[0]-1] = file[cursor_pos[0]-1].lstrip(" ")
     elif k == "\x05": # Ctrl+e (goto end/start of the line)
         if cursor_pos[1] == len(file[cursor_pos[0]-1])+1 : cursor_pos[1] = 1 ; sticky_column = cursor_pos[1]
@@ -324,8 +366,20 @@ while True: # Main loop
                     # Mixed case → go to upper
                     new_word = word.upper()
                 file[cursor_pos[0]-1] = line[:start] + new_word + line[end:]
+            case "s":
+                file[cursor_pos[0]-1] = word+file[cursor_pos[0]-1]
+                cursor_pos[1] += len(word)
+            case "e":
+                file[cursor_pos[0]-1] += word
+                cursor_pos[1] += len(word)
             case _:
                 0
+    elif k == "\x15": # Ctrl+u (Undo)
+        if undo_count > 0:
+            undo_count -= 1
+            file = file_backups[undo_count % undo_max_size][:]
+            if cursor_pos[0] > len(file) : cursor_pos[0] = len(file)
+            cursor_pos[1] = len(file[cursor_pos[0]-1])+1
     elif k == key.BACKSPACE: # Backspace handling
         saveBackup()
         clearCursor()
@@ -360,3 +414,5 @@ while True: # Main loop
 
         cursor_pos[1]+=1
         sticky_column+=1
+
+    if cursor_pos[1] < 1 : cursor_pos[1] = 1
