@@ -17,4 +17,7 @@ This isn't the full release.
 
 Ctrl+a to exit.
 
-Currently developing : Nothing for now
+Currently developing : Rewriting the whole project in go.
+
+### Why am I rewriting it in go?
+For better performance and adding easy multithreading, and I am going to replace the python plugin system with a lua plugin system instead.
