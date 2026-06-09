@@ -17,4 +17,4 @@ This isn't the full release.
 
 Ctrl+a to exit.
 
-Currently developing : Horizontal scrolling
+Currently developing : Nothing for now
