@@ -5,15 +5,25 @@ import sys
 
 
 
-file = ["Welcome to EDITATOR (Alpha)","","Editator is somewhat unstable so don't rely on it too much!","","Shortcuts:",
+file = ["Welcome to EDITATOR (Alpha)","","Editator is somewhat unstable so don't rely on it too much!","\033[1;31mIf you are new I highly recommend taking a look at this guide","","Shortcuts:",
 " - Ctrl+b         = Command mode.",
 " - Ctrl+e         = Goes to the end of the line, goes to the start if already at the end.",
 " - Ctrl+Backspace = Deletes the content of the current line.",
-" - Ctrl+\\        = ",
+" - Ctrl+\\        = Removes all of the indentation from the current line.",
+" - Ctrl+u         = Undo the last action.",
+" - Ctrl+w         = Word mode/operations.",
+"",
+"Word mode/operations keys:",
+" - Backspace = Delete the word under the cursor.",
+" - c         = Toggle case of the word under the cursor.",
+" - s         = Copy word to the start of the line.",
+" - e         = Append word at the end of the line.",
 "",
 "Command mode keys:",
 " - w         = Writes to the file.",
 " - r         = Renames the file.",
+" - R         = Find and replace a word.",
+" - -         = Toggle 'exit command mode after keypress' on/off.",
 " - g         = Goto a line.",
 " - h         = Toggles on/off the highlight.",
 " - c         = Clears the whole file.",
@@ -21,9 +31,19 @@ file = ["Welcome to EDITATOR (Alpha)","","Editator is somewhat unstable so don't
 " - o         = Opens a file.",
 " - q         = Force quits.",
 " - i         = Toggles on/off the auto indentation.",
-" - backspace = Delete from line to line",
+" - e         = Go to the last line.",
+" - backspace = Delete a range of lines (format: startLine&endLine).",
 "",
-"(NOT ALL THE KEYBINDS ARE PRESENT HERE)"
+"github: https://github.com/dynamicship31/Editator?tab=readme-ov-file",
+"",
+"(NOT ALL THE KEYBINDS MIGHT BE PRESENT HERE)",
+"",
+"Changelog:",
+"+ Added horizontal scrolling (FINALLY), although its still buggy",
+"+ Added new themes in plugins.py",
+"+ Added more customization with colors via plugins",
+"+ Added some shortcuts like Ctrl+b & e to go to the end of the file",
+"+ Added more shortcuts to the shortcuts guide in the welcome preset file"
 ]
 undo_max_size = 100
 file_backups = [[""] for i in range(undo_max_size)]
@@ -46,6 +66,7 @@ undo_count = 0
 
 cursor_pos = [1,1]
 scroll = 0
+horizontal_scroll = 0
 
 # (colors)
 color = "\033[48;2;31;31;31m"
@@ -61,6 +82,8 @@ default_color        = ""
 keyword_color        = ""
 special_color        = ""
 super_special_color  = ""
+string_color         = ""
+comment_color        = ""
 
 highlight = True # Turn to false to not have highlighting on by default
 
@@ -94,7 +117,7 @@ def saveBackup():
     undo_count += 1
 
 def update_scroll():
-    global scroll
+    global scroll, horizontal_scroll
     old_scroll = scroll
     if cursor_pos[0] > scroll + term_size.lines - 2:
         scroll = cursor_pos[0] - (term_size.lines - 2)
@@ -103,24 +126,64 @@ def update_scroll():
     if scroll != old_scroll:
         print("\033[2J", end="")
 
+    visible_cols = term_size.columns-8
+    if cursor_pos[1] > horizontal_scroll + visible_cols : horizontal_scroll = cursor_pos[1]-visible_cols
+    if cursor_pos[1] <= horizontal_scroll : horizontal_scroll = cursor_pos[1]-1
+
 import re
 
-def ansi_len(s: str) -> int:
-    """Return visible length of string, ignoring ANSI escape codes."""
-    return len(re.sub(r'\033\[[0-9;]*m|\x1b\[[0-9;]*[a-zA-Z]', '', s))
+def ansi_len(s: str) -> int: # Return length without counting ansi
+    return len(re.sub(r"\033\[[0-9;]*m|\x1b\[[0-9;]*[a-zA-Z]", "", s))
+
+def ansi_strip(s: str) -> str: # Return line without ansi
+    return re.sub(r"\033\[[0-9;]*[a-zA-Z]|\x1b\[[0-9;]*[a-zA-Z]", "", s)
 
 def showfile():
     counter = 1 + scroll
     screen_row = 1
     space = " "
 
-    for i in file[scroll:scroll + term_size.lines - 2]:
-        if highlight == True:
-            import highlight as hl
-            i = hl.colorUp(i,color,file_name.split(".")[-1],[default_color,keyword_color,special_color,super_special_color])
+    for raw in file[scroll:scroll + term_size.lines - 2]:
+        sliced = raw[horizontal_scroll:]
 
-        tmp1 = f"{cursor_line_count_bg_color}{space*(5-len(str(counter)))}{cursor_line_count_fg}{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if i.strip()=="" else i)
+        if highlight:
+            import highlight as hl
+            i = hl.colorUp(sliced, color, file_name.split(".")[-1], [default_color,keyword_color,special_color,super_special_color,string_color,comment_color])
+        else:
+            i = sliced
+
+        tmp1 = f"{cursor_line_count_bg_color}{space*(5-len(str(counter)))}{cursor_line_count_fg}{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if raw[horizontal_scroll:].strip() == "" else i)
         tmp2 = f"{line_count_bg_color}{space*(5-len(str(counter)))}{line_count_fg}{counter} \033[0;0m{color} " + i
+
+        pad = term_size.columns - ansi_len(tmp1 if counter == cursor_pos[0] else tmp2)
+        pad = max(0, pad)
+
+        if counter == cursor_pos[0]:
+            ut.printAt(screen_row, 0, tmp1 + color + " " * pad + "\033[0;0m")
+        else:
+            ut.printAt(screen_row, 0, tmp2 + color + " " * pad + "\033[0;0m")
+
+        counter += 1
+        screen_row += 1
+
+    for row in range(screen_row, term_size.lines - 1):
+        ut.printAt(row, 0, color + " " * term_size.columns + "\033[0;0m")
+
+def showfileOld():
+    counter = 1 + scroll
+    screen_row = 1
+    space = " "
+
+    for i in file[scroll:scroll + term_size.lines - 2]:
+        sliced = i[horizontal_scroll:]
+
+        if highlight:
+            import highlight as hl
+            i = hl.colorUp(i,color,file_name.split(".")[-1],[default_color,keyword_color,special_color,super_special_color,string_color,comment_color])
+        else : i = sliced
+
+        tmp1 = f"{cursor_line_count_bg_color}{space*(5-len(str(counter)))}{cursor_line_count_fg}{counter} \033[0;0m{color} " + (i.replace(" ", f"\033[38;5;8m•\033[0;0m{color}") if i.strip()=="" else i)[horizontal_scroll:]
+        tmp2 = f"{line_count_bg_color}{space*(5-len(str(counter)))}{line_count_fg}{counter} \033[0;0m{color} " + i[horizontal_scroll:]
 
         pad = term_size.columns - ansi_len(tmp1 if counter == cursor_pos[0] else tmp2)
         pad = max(0, pad)  # Never negative
@@ -161,7 +224,9 @@ while True: # Main loop
 
     update_scroll()
 
-    show_pos=[cursor_pos[0] - scroll,cursor_pos[1]%(term_size.columns-7)]
+    #if cursor_pos[1] > term_size.columns-7 : input("WORKS!")
+
+    show_pos=[cursor_pos[0] - scroll, cursor_pos[1] - horizontal_scroll]
 
     showfile()
 
@@ -287,10 +352,12 @@ while True: # Main loop
             file[cursor_pos[0]-1] = "    "+file[cursor_pos[0]-1]
         elif k == "-":
             toggle_command_after = False if toggle_command_after else True
-        elif k == ":":
+        elif k == ":": # WIP
             match inputDialogue(":"):
                 case "opt":
                     outputDialogue("Optimized!!!")
+        elif k == "e":
+            cursor_pos = [len(file),1]
         if toggle_command_after == True : command = False
 
     # Arrows
@@ -383,7 +450,7 @@ while True: # Main loop
     elif k == key.BACKSPACE: # Backspace handling
         saveBackup()
         clearCursor()
-        
+
         if cursor_pos[1] == 1 and cursor_pos[0] > 1:
             cursor_pos[1] = len(file[cursor_pos[0]-2])+1
             file[cursor_pos[0]-2] += file[cursor_pos[0]-1]

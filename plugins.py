@@ -23,6 +23,18 @@ def cherry(extern_vars):
     extern_vars["line_count_bg_color"] = "\033[48;2;101;26;49m"
     extern_vars["line_count_fg"] = "\033[38;2;0;0;0m"
     extern_vars["keyword_color"] = "\033[1;31m"
+    extern_vars["string_color"] = "\033[38;2;255;50;50m"
+    extern_vars["comment_color"] = "\033[1;31m"
+
+def day(extern_vars):
+    extern_vars["color"] = "\033[48;2;255;255;255m"
+    extern_vars["default_color"] = "\033[38;2;0;0;0m"
+    extern_vars["keyword_color"] = "\033[38;2;255;100;0m"
+    extern_vars["top_bar_color"] = "\033[48;2;50;50;100m"
+    extern_vars["cursor_line_count_bg_color"] = "\033[48;2;0;0;0m"
+    extern_vars["cursor_line_count_fg"] = "\033[38;2;100;100;255m"
+    extern_vars["line_count_bg_color"] = "\033[48;2;100;100;100m"
+    extern_vars["string_color"] = "\033[38;2;200;100;100m"
 
 def init(extern_vars):
     theme = "default"
@@ -34,5 +46,7 @@ def init(extern_vars):
             blueBerry(extern_vars)
         case "cherry":
             cherry(extern_vars)
+        case "day":
+            day(extern_vars)
         case "default":
             return 0;

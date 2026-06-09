@@ -5,7 +5,7 @@
 SUPPORTED LANGUAGES
 
 Python, Javascript/Typescript, Haskell, Porth,
-C, Lua, Go, Fortran
+C, Lua, Go, Fortran, Bash
 
 FUTURE LANGUAGES TO SUPPORT
 
@@ -41,7 +41,7 @@ def goodsplit(dividers: list, content: str):
     return tokens
 
 
-def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special_keywords=[], comment="//", case_sensitivity=True,colors=["","","",""]):
+def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special_keywords=[], comment="//", case_sensitivity=True,colors=["","","","","",""]):
     tokens = goodsplit(list("\"#()[]{}-+*/%&=£$'!^<>|:;,. "), x)
     parts = []
 
@@ -51,7 +51,7 @@ def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special
 
     for idx, token in enumerate(tokens):
         if in_string:
-            parts.append(f"\033[38;2;100;170;100m{token}{reset(bg)}")
+            parts.append(f"\033[38;2;100;170;100m{colors[4]}{token}{reset(bg)}")
             if escape:
                 escape = False  # this char was escaped, skip close check
             elif token == "\\":
@@ -60,12 +60,12 @@ def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special
                 in_string = False
 
         elif token == comment:
-            parts.append(f"\033[38;5;8m{''.join(tokens[idx:])}{reset(bg)}")
+            parts.append(f"\033[38;5;8m{colors[5]}{''.join(tokens[idx:])}{reset(bg)}")
             break
         elif token in ('"', "'"):
             in_string = True
             string_char = token
-            parts.append(f"\033[38;2;100;170;100m{token}{reset(bg)}")
+            parts.append(f"\033[38;2;100;170;100m{colors[4]}{token}{reset(bg)}")
         elif (token if case_sensitivity else token.lower()) in keywords:
             if (token if case_sensitivity else token.lower()) in super_special_keywords : parts.append(f"\033[38;2;18;180;200m{colors[3]}{token}{reset(bg)}")
             elif (token if case_sensitivity else token.lower()) in special_keywords : parts.append(f"\033[1;31m{colors[2]}{token}{reset(bg)}")
@@ -79,7 +79,7 @@ def generalColorUp(x:str, bg=BG, keywords=[], special_keywords=[], super_special
 
     return "".join(parts)
 
-def colorUp(x:str, bg=BG,file_type:str = "txt", colors:list=["","","",""]):
+def colorUp(x:str, bg=BG,file_type:str = "txt", colors:list=["","","","","",""]):
     case_sens = True
     match file_type:
         case "py":
@@ -179,6 +179,9 @@ def colorUp(x:str, bg=BG,file_type:str = "txt", colors:list=["","","",""]):
             ["alias","jobs","kill","umask","unalias","unset","wait","exit","complete"]
             ]
             commentchar = "#"
+        case "bf":
+            tmp_keywords = [["<>-+.[],"],[],[]]
+            commentchar = "comment"
         case _:
             return colors[0]+x
 
