@@ -1,0 +1,158 @@
+-- Drop this file inside your .config/editator directory
+
+theme = "purpoison"
+
+local switch = {
+    gruberdarker = function() -- Trying to mimic it kinda.
+        set_color("reset_color",          {24,24,24})
+        set_color("line_count_bg",        {24,24,24})
+        set_color("cursor_line_count_bg", {24,24,24})
+        set_color("cursor_line_count_fg", {255,255,0})
+        set_color("default_color",        {228,228,239})
+        set_color("keyword",              {255,221,51})
+        set_color("built_in_function",    {150,166,200})
+        set_color("type",                 {149,169,159})
+        set_color("loop_and_if",          {255,151,151})
+        set_color("special_keyword",      {67,67,240})
+        set_color("comment",              {204,140,60})
+        set_color("bottom_bar_bg",        {28,18,18})
+    end,
+
+    batman = function()
+        set_color("reset_color",          {18,18,18})
+        set_color("cursor_line_count_bg", {18,18,18})
+        set_color("cursor_line_count_fg", {220,220,0})
+        set_color("line_count_bg",        {18,18,18})
+        set_color("line_count_fg",        {55,55,55})
+    end,
+
+    blueberry = function()
+        set_color("reset_color",          {20,20,50})
+        set_color("line_count_fg",        {67,116,145})
+        set_color("cursor_line_count_fg", {100,100,150})
+        set_color("cursor_line_count_bg", {18,18,18})
+        set_color("keyword",              {214,240,255})
+        set_color("special_keyword",      {120,120,200})
+    end,
+
+    cherry = function()
+        set_color("reset_color",          {30,30,30})
+        set_color("cursor_line_count_bg", {60,8,20})
+        set_color("cursor_line_count_fg", {247,138,168})
+        set_color("line_count_bg",        {101,26,49})
+        set_color("line_count_fg",        {0,0,0})
+        set_color("keyword",              {180,0,0})
+        set_color("special_keyword",      {255,0,0})
+        set_color("string",               {255,100,100})
+        set_color("comment",              {180,0,0})
+        set_color("default_color",        {230,200,200})
+        set_color("bottom_bar_bg",        {200,100,100})
+    end,
+
+    day = function()
+        set_color("reset_color",          {255,255,255})
+        set_color("keyword",              {255,100,0})
+        set_color("cursor_line_count_bg", {0,0,0})
+        set_color("cursor_line_count_fg", {100,100,255})
+        set_color("line_count_bg",        {100,100,100})
+        set_color("string",               {200,100,100})
+        set_color("default_color",        {0,0,0})
+        set_color("comment",              {140,140,140})
+        set_color("bottom_bar_bg",        {200,200,200})
+        set_color("bottom_bar_fg",        {0,0,0})
+        set_color("loop_and_if",          {60,60,200})
+    end,
+
+    ash = function()
+        set_color("reset_color",          {20,20,20})
+        set_color("cursor_line_count_bg", {42,42,42})
+        set_color("cursor_line_count_fg", {189,189,189})
+        set_color("line_count_bg",        {20,20,20})
+        set_color("line_count_fg",        {74,74,74})
+        set_color("keyword",              {197,134,192})
+        set_color("string",               {206,145,120})
+        set_color("comment",              {74,74,74})
+        set_color("special_keyword",      {220,220,170})
+    end,
+
+    deepsea = function()
+        set_color("reset_color",          {0,13,24})
+        set_color("cursor_line_count_bg", {0,36,58})
+        set_color("cursor_line_count_fg", {41,182,246})
+        set_color("line_count_bg",        {0,13,24})
+        set_color("line_count_fg",        {0,42,64})
+        set_color("keyword",              {0,188,212})
+        set_color("string",               {128,222,235})
+        set_color("comment",              {26,74,90})
+        set_color("special_keyword",      {77,208,225})
+    end,
+
+    elixir = function()
+        set_color("reset_color",          {17,8,32})
+        set_color("cursor_line_count_bg", {42,21,69})
+        set_color("cursor_line_count_fg", {176,138,224})
+        set_color("line_count_bg",        {17,8,32})
+        set_color("line_count_fg",        {61,40,96})
+        set_color("keyword",              {255,121,198})
+        set_color("string",               {224,200,122})
+        set_color("comment",              {108,138,158})
+        set_color("special_keyword",      {157,125,232})
+    end,
+
+    turbo = function()
+        set_color("reset_color",          {0,0,170})
+        set_color("keyword",              {255,255,0})
+        set_color("string",               {0,255,255})
+        set_color("comment",              {0,255,0})
+        set_color("built_in_function",    {0,255,255})
+        set_color("type",                 {255,255,255})
+        set_color("special_keyword",      {255,180,0})
+        set_color("cursor_line_count_bg", {0,0,140})
+        set_color("cursor_line_count_fg", {255,255,255})
+        set_color("line_count_bg",        {0,0,170})
+        set_color("line_count_fg",        {170,170,170})
+        set_color("default_color",        {255,255,255})
+    end,
+
+    spring = function()
+        set_color("reset_color",          {62,62,62})
+        set_color("type",                 {220,220,0})
+        set_color("comment",              {140,140,140})
+        set_color("string",               {50,170,50})
+        set_color("keyword",              {255,140,140})
+        set_color("cursor_line_count_fg", {60,60,170})
+        set_color("cursor_line_count_bg", {0,0,0})
+        set_color("line_count_bg",        {62,62,62})
+    end,
+
+    hackerino = function()
+        set_color("reset_color",          {0,0,0})
+        set_color("type",                 {200,0,200})
+        set_color("comment",              {50,50,50})
+        set_color("string",               {100,167,100})
+        set_color("keyword",              {100,100,255})
+        set_color("line_count_fg",        {100,100,100})
+        set_color("line_count_bg",        {0,0,0})
+        set_color("cursor_line_count_bg", {0,0,0})
+        set_color("cursor_line_count_fg", {250,250,250})
+        set_color("bottom_bar_bg",        {20,20,40})
+    end,
+
+    purpoison = function() -- MMMMM, PURPLEEEEE
+        set_color("bottom_bar_bg",        {50,50,200})
+        set_color("reset_color",          {10,10,20})
+        set_color("line_count_fg",        {100,100,100})
+        set_color("line_count_bg",        {12,12,50})
+        set_color("cursor_line_count_bg", {25,25,100})
+        set_color("cursor_line_count_fg", {255,220,220})
+        set_color("keyword",              {150,150,250})
+        set_color("built_in_function",    {160,50,200})
+        set_color("loop_and_if",          {170,120,250})
+        set_color("string",               {100,150,150})
+        set_color("bottom_bar_fg",        {255,255,255})
+    end,
+}
+
+if switch[theme] then
+    switch[theme]()
+end
