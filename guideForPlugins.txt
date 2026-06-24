@@ -1,0 +1,39 @@
+To make a plugin that will run just at start you need to make a 'plugins.elua' in your .config/editator
+And to make a plugin that will run in a loop until the editor is closed make a 'loop.elua' in your .config/editator
+
+Functions:
+- set_color(<element name (string)>, {r, g, b})
+    |-keyword
+    |-type (built in types)
+    |-built_in_function
+    |-reset_color (bg color)
+    |-loop_and_if
+    |-special_keyword
+    |-string
+    |-comment
+    |-line_count_fg
+    |-line_count_bg
+    |-cursor_line_count_fg
+    |-cursor_line_count_bg
+    |-default_color (fg default/not highlighted color)
+    |-bottom_bar_bg
+    |-bottom_bar_fg
+
+- get_attribute(<element name (string)>) -> returns a string
+    |-file_name
+    |-last_char (last pressed character (character))
+    |-last_key  (last pressed key (number))
+
+- set_attribute(<element name (string)>, <new value for the attribute (string)>)
+    |-file_name
+    |-cursor_type (block, blinking_block, vertical_line, blinking_vertical_line, horizontal_line, blinking_horizontal_line)
+
+- wait(number)
+
+- set_line(<line number (number)>, <what to change the line into (string)>)
+
+- get_current_line() -> returns a string
+
+- get_cursor_pos() -> return ycursor, xcursor
+
+- append_line_at(number)
